@@ -1,3 +1,51 @@
+<?php
+$message = "";
+
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+
+    $name  = htmlspecialchars(trim($_POST["name"] ?? ""));
+    $phone = htmlspecialchars(trim($_POST["phone"] ?? ""));
+    $email = htmlspecialchars(trim($_POST["email"] ?? ""));
+
+    if ($name && $phone && $email) {
+
+        $entry = [
+            "name" => $name,
+            "phone" => $phone,
+            "email" => $email,
+            "submitted_at" => date("Y-m-d H:i:s")
+        ];
+
+        $file = "entries.json";
+
+        if (file_exists($file)) {
+            $data = json_decode(file_get_contents($file), true);
+
+            if (!is_array($data)) {
+                $data = [];
+            }
+        } else {
+            $data = [];
+        }
+
+        $data[] = $entry;
+
+        if (file_put_contents(
+    $file,
+    json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+    LOCK_EX
+)) {
+            $message = "تم إرسال المشاركة بنجاح.";
+        } else {
+            $message = "حدث خطأ أثناء الحفظ.";
+        }
+
+    } else {
+        $message = "يرجى تعبئة جميع الحقول.";
+    }
+}
+?>
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -163,11 +211,19 @@ button:hover{
         padding:30px;
     }
 }
+
+.message{
+    background:rgba(0,255,100,.2);
+    padding:15px;
+    border-radius:12px;
+    margin-bottom:20px;
+    color:#fff;
+
+}
 </style>
 
 </head>
 <body>
-
 <div class="glow"></div>
 <div class="glow2"></div>
 
@@ -177,25 +233,29 @@ button:hover{
 🎉 فرصة لا تُفوّت!
 </div>
 
+<?php if ($message): ?>
+<div class="message">
+    <?= htmlspecialchars($message) ?>
+</div>
+<?php endif; ?>
+
 <h1>
 اربح <span class="highlight">تذكرتين مجانًا</span><br>
 إلى مدينة <span class="highlight">Six Flags</span>
 </h1>
 
-<p>
-هل أنت مستعد ليوم مليء بالإثارة والمغامرات؟<br>
+<p>هل أنت مستعد ليوم مليء بالإثارة والمغامرات؟<br>
 شارك الآن في السحب وادخل الفرصة للفوز بتذكرتين إلى
 <strong>Six Flags</strong>.<br>
 قد يكون اسمك هو الفائز القادم!
 </p>
 
-<form onsubmit="showMessage(event)">
+<form method="post">
+<input name="name" type="text" placeholder="الاسم الكامل" required>
 
-<input type="text" placeholder="الاسم الكامل" required>
+<input name="phone" type="tel" placeholder="رقم الجوال" required>
 
-<input type="tel" placeholder="رقم الجوال" required>
-
-<input type="email" placeholder="البريد الإلكتروني" required>
+<input name="email" type="email" placeholder="البريد الإلكتروني" required>
 
 <button type="submit">
 🎢 شارك في السحب الآن
@@ -208,14 +268,5 @@ button:hover{
 </div>
 
 </div>
-
-<script>
-function showMessage(event){
-    event.preventDefault();
-
-    alert("This is a phishing page!!!");
-}
-</script>
-
 </body>
 </html>
